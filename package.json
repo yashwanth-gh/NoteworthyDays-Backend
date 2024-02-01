@@ -1,0 +1,26 @@
+{
+  "name": "google-oauth2.0-oidc",
+  "version": "1.0.0",
+  "description": "test google authentication",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [
+    "nodejs",
+    "oauth2.0",
+    "google"
+  ],
+  "author": "Yashwanth B M",
+  "license": "ISC",
+  "dependencies": {
+    "cookie-parser": "^1.4.6",
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.1",
+    "express": "^4.18.2",
+    "express-session": "^1.18.0",
+    "googleapis": "^131.0.0",
+    "jsonwebtoken": "^9.0.2",
+    "prettier": "^3.2.4"
+  }
+}
