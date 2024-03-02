@@ -1,11 +1,11 @@
 import { Router } from "express";
+import { AuthenticateWithGoogleOAuth, createNewAccountController,  } from "../controllers/user.controller.js";
 
 const router = Router();
 
-router.route("/signup").get((req,res)=>{
-    return res.json({
-        "test" : "Hi Yashwanth B M, I THINK THIS IS ENOUGH FOR TODAY"
-    })
-})
+router.route("/signup").post(createNewAccountController);
+
+router.route("/oauth/google").get(AuthenticateWithGoogleOAuth);
+
 
 export default router;
