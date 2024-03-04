@@ -1,13 +1,13 @@
 import mongoose, { Document } from "mongoose";
 import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
+import { conf } from "../constants";
 
 export interface UserInput {
     fullName: string;
     email: string;
     password: string;
     refreshToken?: string;
-    googleRefreshToken?: string;
 }
 
 export interface UserDocument extends UserInput, Document {
@@ -38,9 +38,6 @@ const userSchema = new mongoose.Schema(
         },
         refreshToken: {
             type: String
-        },
-        googleRefreshToken: {
-            type: String
         }
     },
     {
@@ -58,5 +55,32 @@ userSchema.methods.isPasswordCorrect = async function (password: string): Promis
     return await bcrypt.compare(password, this.password).catch(err => false)
 }
 
+
+userSchema.methods.generateAccessToken = function(){
+    return jwt.sign(
+        {
+        _id : this._id,
+        email : this.email,
+        fullName : this.fullName,
+        },
+        conf.accessTokenSecret,
+        {
+            expiresIn : conf.accessTokenExpiry
+        }
+    )
+};
+
+
+userSchema.methods.generateRefreshToken = function(){
+  return jwt.sign(
+        {
+        _id : this._id,
+        },
+        conf.refreshTokenSecret,
+        {
+            expiresIn : conf.refreshTokenExpiry
+        }
+    )
+};
 
 export default mongoose.model<UserDocument>("User", userSchema)
