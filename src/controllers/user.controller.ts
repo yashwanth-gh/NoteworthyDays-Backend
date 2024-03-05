@@ -4,7 +4,7 @@ import { asyncHandler } from "../utils/asyncHandler.js";
 
 
 const AuthenticateWithGoogleOAuth = asyncHandler(async (req, res) => {
-    /* 
+    /*
     Workflow:
     1. Get code from query string
     2. Get ID and access token By exchanging the Authorization code.
@@ -52,6 +52,7 @@ const createNewAccountController = asyncHandler(async(req,res)=>{
             new ApiResponse(200, { email, password }, "auth code received")
         );
 })
+
 export {
     AuthenticateWithGoogleOAuth,
     createNewAccountController
