@@ -37,9 +37,10 @@ const AuthenticateWithGoogleOAuth = asyncHandler(async (req, res) => {
 })
 
 const createNewAccountController = asyncHandler(async(req,res)=>{
-    const {email, password} = req.body;
+    const {fullName,email, password} = req.body;
 
-    console.log(email, password);
+    console.log( {fullName,email, password} );
+    console.log("Passes the data validation ! :)")
 
     /* 
     Here he handled the traditional email password login. 
