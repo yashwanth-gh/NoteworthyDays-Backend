@@ -10,8 +10,10 @@ const signupValidation = asyncHandler(async (req, res, next) => {
     body("password")
       .trim()
       .isLength({ min: 8 })
-      .withMessage("Password must be at least 8 characters long")
-      .matches(/^(?=.*[A-Za-z])(?=.*\d).*$/)
+      .withMessage("Password must be at least 8 characters long"),
+    body("password")
+      .trim()
+      .matches(/^(?=.*[A-Za-z0-9@#%$])[A-Za-z0-9@#%$]{8,}$/)
       .withMessage("Password must contain atleast one alphabet and one digit"),
   ];
 
@@ -27,5 +29,5 @@ const signupValidation = asyncHandler(async (req, res, next) => {
 });
 
 export {
-    signupValidation
+  signupValidation
 }
