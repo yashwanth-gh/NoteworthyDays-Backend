@@ -1,7 +1,7 @@
 import mongoose, { Document } from "mongoose";
 import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
-import { conf } from "../constants";
+import { conf } from "../constants.js";
 
 export interface UserInput {
     fullName: string;
@@ -14,6 +14,8 @@ export interface UserDocument extends UserInput, Document {
     createdAt: Date;
     updatedAt: Date;
     isPasswordCorrect(password: string): Promise<boolean>;
+    generateAccessToken(): string;
+    generateRefreshToken(): string;
 }
 
 const userSchema = new mongoose.Schema(

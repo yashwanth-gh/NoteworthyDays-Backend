@@ -28,6 +28,19 @@ const signupValidation = asyncHandler(async (req, res, next) => {
   }
 });
 
+const signinValidation = asyncHandler(async (req, res, next) => {
+  const rules = [body("email").isEmail().withMessage("Email is invalid")];
+  await Promise.all(rules.map((rule) => rule.run(req)));
+  let errors = validationResult(req);
+  if (!errors.isEmpty()) {
+    console.log(errors.array().map((err) => err.msg));
+    throw new ApiError(400, "Login validation failed");
+  } else {
+    next();
+  }
+});
+
+
 export {
-  signupValidation
+  signupValidation,signinValidation
 }
