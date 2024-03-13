@@ -130,10 +130,12 @@ const loginExistingUserController = asyncHandler(async (req, res) => {
     const loggedInUser = await User.findById(user._id).select(
         "-password -refreshToken"
     );
-
+    
+    const tenDaysInMilliseconds = 10 * 24 * 60 * 60 * 1000; // 10 days in milliseconds
     const options = {
         httpOnly: true,
-        secure: true,
+        secure: false,
+        expires: new Date(Date.now() + tenDaysInMilliseconds)
     };
 
     return res
@@ -152,8 +154,31 @@ const loginExistingUserController = asyncHandler(async (req, res) => {
 
 });
 
+//FIXME: This is a test controller to just check. Whether the login controller is working properly this controller. 
+//Just just Receives the cookies sent back by the browser. 
+const testCont = asyncHandler(async(req,res)=>{
+    const data = req.body;
+    console.log(data);
+    const access_token = req.cookies.accessToken;
+    const refresh_token = req.cookies.refreshToken;
+    // console.log({access_token,refresh_token});
+    //*Working Correctly
+
+    res.status(200)
+    .json(
+        new ApiResponse(
+            200,
+            {
+                "response":"nothing all ok"
+            },
+            "User logged in successfully"
+        )
+    );
+})
+
 export {
     AuthenticateWithGoogleOAuth,
     createNewAccountController,
-    loginExistingUserController
+    loginExistingUserController,
+    testCont
 };

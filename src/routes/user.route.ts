@@ -1,11 +1,12 @@
 import { Router } from "express";
-import { AuthenticateWithGoogleOAuth, createNewAccountController, loginExistingUserController,  } from "../controllers/user.controller.js";
+import { AuthenticateWithGoogleOAuth, createNewAccountController, loginExistingUserController, testCont,  } from "../controllers/user.controller.js";
 import { signupValidation,signinValidation } from "../middlewares/authDataValidation.middleware.js";
 
 const router = Router();
 
 router.route("/signup").post(signupValidation,createNewAccountController);
 router.route("/signin").post(signinValidation,loginExistingUserController);
+router.route("/test").post(testCont);
 
 router.route("/oauth/google").get(AuthenticateWithGoogleOAuth);
 
