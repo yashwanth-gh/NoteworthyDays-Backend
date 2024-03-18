@@ -96,6 +96,7 @@ export class AuthenticationControllers {
             fullName,
             email,
             password,
+            is_verified:false
         });
 
         const createdUser = await User.findById(user._id).select(

@@ -8,6 +8,7 @@ export interface UserInput {
     email: string;
     password: string;
     refreshToken?: string;
+    is_verified:boolean;
 }
 
 export interface UserDocument extends UserInput, Document {
@@ -40,6 +41,9 @@ const userSchema = new mongoose.Schema(
         },
         refreshToken: {
             type: String
+        },
+        is_verified : {
+            type : Boolean
         }
     },
     {
