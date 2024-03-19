@@ -1,12 +1,15 @@
-import { create } from "domain"; import User from "../models/user.model.js";
+import { create } from "domain";
+import User from "../models/user.model.js";
 import { getGoogleOAuthTokens } from "../services/user.service.js";
 import { ApiError } from "../utils/ApiError.js";
 import { ApiResponse } from "../utils/ApiResponse.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
 import jwt from "jsonwebtoken";
-import mongoose from "mongoose";
 import { Request, Response } from "express";
 import { conf } from "../constants.js";
+import UserVerificationModel from "../models/UserVerification.model.js";
+import { sendVerificationMail } from "../utils/nodemailer.js";
+import { hasOneMinutePassed, hasOtpExpired } from '../utils/otpHelper.js'
 
 export class AuthenticationControllers {
 
@@ -96,7 +99,7 @@ export class AuthenticationControllers {
             fullName,
             email,
             password,
-            is_verified:false
+            is_verified: false
         });
 
         const createdUser = await User.findById(user._id).select(
@@ -111,6 +114,115 @@ export class AuthenticationControllers {
             .json(
                 new ApiResponse(200, { createdUser }, "user created")
             );
+    })
+
+    sendOtpToMail = asyncHandler(async (req: Request, res: Response) => {
+
+        const { email } = req.body;
+
+        const user = await User.findOne({ email });
+
+        if (!user) {
+            throw new ApiError(404, "Not fount : Email not found");
+        }
+
+        if (user.is_verified) {
+            throw new ApiError(400, "Bad request : User is already verified")
+        }
+
+        const oldOtdData = await UserVerificationModel.findOne({ user_id: user._id });
+
+        if (oldOtdData) {
+            const canSendOtp: boolean = hasOneMinutePassed(Number(oldOtdData.timestamp));
+            if (!canSendOtp) {
+                throw new ApiError(400, "Try after sometime!")
+            }
+        }
+        //& This is the function which sends the OTP to user's Mail address and return the 6 digit OTP
+        const VerificationCode = sendVerificationMail(user);
+
+        const cDate = new Date();
+
+        await UserVerificationModel.findOneAndUpdate(
+            { user_id: user._id },
+            { otp: VerificationCode, timestamp: new Date(cDate.getTime()) },
+            { upsert: true, new: true, setDefaultsOnInsert: true }
+        )
+
+        return res
+            .status(200)
+            .json(
+                new ApiResponse(
+                    200,
+                    {},
+                    "Verification mail succesfully sent!")
+            )
+
+    })
+
+    verifyOTP = asyncHandler(async (req: Request, res: Response) => {
+        const { email, otp } = req.body;
+
+        if (otp.length != 6) {
+            throw new ApiError(401, "invalid OTP, OTP should be 6 digits")
+        }
+
+        // Aggregation pipelines can be used like below, but for this I think this is unnecessary complicated. 
+        /*  // Aggregation pipeline to join User and UserVerification collections
+            const otpInfo = await User.aggregate([
+                // Match user by email
+                { $match: { email } },
+                // Lookup UserVerification documents
+                {
+                    $lookup: {
+                        from: 'userverifications', // Name of the UserVerification collection
+                        localField: '_id',
+                        foreignField: 'user_id',
+                        as: 'verificationInfo'
+                    }
+                },
+                // Unwind the verificationInfo array (as it's a one-to-one relationship)
+                { $unwind: '$verificationInfo' },
+                // Project to only return the OTP
+                { $project: { _id: 0, otp: '$verificationInfo.otp' } }
+            ]); */
+
+        const user = await User.findOne({ email });
+        if (!user) {
+            throw new ApiError(404, "User not found")
+        }
+
+        const userVerificationDetails = await UserVerificationModel.findOne({ user_id: user._id });
+        if (!userVerificationDetails) {
+            throw new ApiError(404, "OTP not nound : Not sent any otp to mail")
+        }
+
+        const otpExpired: boolean = hasOtpExpired(Number(userVerificationDetails.timestamp));
+        if (otpExpired) {
+            throw new ApiError(401, "Unauthorised : OTP has expired!")
+        }
+
+        const isOtpMatching = userVerificationDetails.otp === Number(otp)
+
+        if (!isOtpMatching) {
+            throw new ApiError(401, "Unauthorized: OTP does not match")
+        }
+
+        user.is_verified = true;
+        await user.save({ validateBeforeSave: false });
+
+        await UserVerificationModel.deleteOne({ user_id: user._id })
+
+        return res
+            .status(200)
+            .json(
+                new ApiResponse(200,
+                    {},
+                    "User account verified successully"
+                )
+            )
+
+
     })
 
     loginExistingUserController = asyncHandler(async (req: Request, res: Response) => {
@@ -273,18 +385,18 @@ export class AuthenticationControllers {
 
         return res
             .status(200)
-            .cookie("accessToken",newAccessToken,options)
-            .cookie("refreshToken",newRefreshToken,options)
+            .cookie("accessToken", newAccessToken, options)
+            .cookie("refreshToken", newRefreshToken, options)
             .json(new ApiResponse(200, {}, "Password changed"));
     })
 
-    getCurrentUser = asyncHandler(async(req: Request, res: Response) =>{
+    getCurrentUser = asyncHandler(async (req: Request, res: Response) => {
         const userData = await User.findById(req.user?._id).select("-password -_id -refreshToken")
         return res
-        .status(200)
-        .json(
-          new ApiResponse(200,{userData} , "current user data fetched successfully")
-        );
+            .status(200)
+            .json(
+                new ApiResponse(200, { userData }, "current user data fetched successfully")
+            );
     })
 }
 

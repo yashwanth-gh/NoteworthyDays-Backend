@@ -28,7 +28,7 @@ const signupValidation = asyncHandler(async (req, res, next) => {
   }
 });
 
-const signinValidation = asyncHandler(async (req, res, next) => {
+const emailValidation = asyncHandler(async (req, res, next) => {
   const rules = [body("email").trim().isEmail().withMessage("Email is invalid")];
   await Promise.all(rules.map((rule) => rule.run(req)));
   let errors = validationResult(req);
@@ -68,6 +68,6 @@ const changePasswordValidation = asyncHandler(async (req, res, next) => {
 
 export {
   signupValidation,
-  signinValidation,
+  emailValidation,
   changePasswordValidation
 }

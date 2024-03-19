@@ -1,14 +1,16 @@
 import { Request, Router } from "express";
-import { signupValidation,signinValidation, changePasswordValidation } from "../middlewares/authDataValidation.middleware.js";
+import { signupValidation,emailValidation, changePasswordValidation } from "../middlewares/authDataValidation.middleware.js";
 import {verifyJWT} from '../middlewares/verifyJWT.middleware.js';
 import authenticationControllers from "../controllers/user.controller.js";
 const router = Router();
 
 //~ --------- PUBLIC ROUTES ---------
 router.route("/signup").post(signupValidation,authenticationControllers.createNewAccountController);
-router.route("/signin").post(signinValidation,authenticationControllers.loginExistingUserController);
+router.route("/signin").post(emailValidation,authenticationControllers.loginExistingUserController);
 router.route("/oauth/google").get(authenticationControllers.AuthenticateWithGoogleOAuth);
 router.route("/refresh-access-token").get(authenticationControllers.refreshAccessToken)
+router.route("/send-otp-to-mail").post(emailValidation,authenticationControllers.sendOtpToMail)
+router.route("/verify-otp").post(authenticationControllers.verifyOTP)
 
 //~ --------- PRIVATE ROUTES ---------
 router.route("/signout").get(verifyJWT,authenticationControllers.logout)
