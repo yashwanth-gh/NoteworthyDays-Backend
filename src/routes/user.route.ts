@@ -16,6 +16,8 @@ router.route("/verify-otp").post(authenticationControllers.verifyOTP)
 router.route("/signout").get(verifyJWT,authenticationControllers.logout)
 router.route("/change-password").post([verifyJWT,changePasswordValidation],authenticationControllers.changeCurrentPassword)
 router.route("/getuser").get(verifyJWT,authenticationControllers.getCurrentUser)
+router.route("/change-fullname").patch(verifyJWT,authenticationControllers.changeUserFullname)
+router.route("/delete-account").delete(verifyJWT,authenticationControllers.deleteUserAccount)
 
 //~ ------- TEST ---------
 router.route("/test").get(verifyJWT,(req,res)=>{
