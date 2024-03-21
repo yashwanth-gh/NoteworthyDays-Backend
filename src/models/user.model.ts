@@ -6,7 +6,9 @@ import { conf } from "../constants.js";
 export interface UserInput {
     fullName: string;
     email: string;
-    password: string;
+    password?: string; // Password becomes optional for Google OAuth users
+    googleId?: string; // New field to store Google User ID
+    profilePictureUrl?: string; // New field to store profile picture URL
     refreshToken?: string;
     is_verified:boolean;
 }
@@ -37,7 +39,13 @@ const userSchema = new mongoose.Schema(
         },
         password: {
             type: String,
-            required: [true, "Password is required"],
+            required: false // Password becomes optional for Google OAuth users
+        },
+        googleId: {
+            type: String // New field to store Google User ID
+        },
+        profilePictureUrl: {
+            type: String // New field to store profile picture URL
         },
         refreshToken: {
             type: String
@@ -53,7 +61,7 @@ const userSchema = new mongoose.Schema(
 )
 
 userSchema.pre("save", async function (next) {
-    if (!this.isModified("password")) return next();
+    if (!this.isModified("password") || !this.password) return next();
     this.password = await bcrypt.hash(this.password, 10);
     return next();
 })

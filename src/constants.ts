@@ -6,6 +6,7 @@ export const conf = {
     googleClientSecret:String(process.env.GOOGLE_OAUTH_CLIENT_SECRET),
     googleOauthRedirectUri:String(process.env.GOOGLE_OAUTH_REDIRECT_URI),
     googleOauthTokenUri:String(process.env.GOOGLE_OAUTH_TOKEN_URI),
+    corsOrigin:String(process.env.CORS_ORIGIN),
     mongoURI: String(process.env.MONGO_URI),
     accessTokenSecret: String(process.env.ACCESS_TOKEN_SECRET),
     refreshTokenSecret: String(process.env.REFRESH_TOKEN_SECRET),

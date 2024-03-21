@@ -51,19 +51,52 @@ export class AuthenticationControllers {
         // 2. Get ID and access token By exchanging the Authorization code.
         const { id_token, access_token } = await getGoogleOAuthTokens({ code });
 
-        console.log({ id_token, access_token });
+
+        // 3. Decode the ID token to obtain user details.
+        const googleUserDetails: any = jwt.decode(id_token);
+
+        // 4. Check if the user already exists in your database.
+        let user = await User.findOne({ email: googleUserDetails.email });
+
+        if (user) throw new ApiError(400, "Bad request : user acoount already exists : overrite this with oauth");
+        
+        // 5. If the user does not exist, create a new user entry with the obtained Google user details.
+        if (!user) {
+            user = await User.create({
+                fullName: googleUserDetails.name,
+                email: googleUserDetails.email,
+                googleId: googleUserDetails.sub,
+                profilePictureUrl: googleUserDetails.picture,
+                is_verified: true // Assume user is verified
+            });
+        }
+        
+        // 6. Generate access and refresh tokens for the user.
+        const { accessToken, refreshToken } = await this.generateAccessAndRefreshToken(user._id);
+        
+        
+        const thirtyDaysInMilliseconds = 30 * 24 * 60 * 60 * 1000; // 30 days in milliseconds
+        const options = {
+            httpOnly: true,
+            secure: false,
+            maxAge: thirtyDaysInMilliseconds
+        };
+
         //TODO: As of now, till this step, everything is working as I thought 
         /*TODO: Next step is to Save the id token and access token in the database
         With the user data received from Google(Which I should Make another api call)
         And then save the user data in the database.And then I Set the cookies and also the session 
         And I also need to handle the Traditional email password login Also.  
         */
+       
+       const origin = req.headers.origin || conf.corsOrigin;
+       
+       return res
+       .status(200)
+       .cookie("accessToken", accessToken, options)
+       .cookie("refreshToken", refreshToken, options)
+       .redirect(origin);
 
-        return res
-            .status(200)
-            .json(
-                new ApiResponse(200, { code }, "auth code received")
-            );
     })
 
     createNewAccountController = asyncHandler(async (req: Request, res: Response) => {
@@ -466,14 +499,14 @@ export class AuthenticationControllers {
         await User.findByIdAndDelete(userId);
 
         return res
-        .status(200)
-        .json(
-            new ApiResponse(
-                200,
-                {},
-                "User accound deleted successfully!"
+            .status(200)
+            .json(
+                new ApiResponse(
+                    200,
+                    {},
+                    "User accound deleted successfully!"
+                )
             )
-        )
     })
 }
 

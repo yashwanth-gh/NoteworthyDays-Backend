@@ -21,8 +21,8 @@ export async function getGoogleOAuthTokens ({code}:{code:string}):Promise<Google
         grant_type:"authorization_code",
         redirect_uri:conf.googleOauthRedirectUri
     }
-console.log(uri)
-console.log(values)
+// console.log(uri)
+// console.log(values)
     try {
         const response = await axios.post<GoogleTokens>(uri,qs.stringify(values),
         {
