@@ -1,6 +1,6 @@
 import { create } from "domain";
 import User from "../models/user.model.js";
-import { getGoogleOAuthTokens } from "../services/user.service.js";
+import { getGoogleOAuthTokens, getGoogleUserProfile, isGoogleAccessTokenValid, refreshGoogleAccessToken } from "../services/user.service.js";
 import { ApiError } from "../utils/ApiError.js";
 import { ApiResponse } from "../utils/ApiResponse.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
@@ -49,54 +49,97 @@ export class AuthenticationControllers {
         const code = req.query.code as string;
 
         // 2. Get ID and access token By exchanging the Authorization code.
-        const { id_token, access_token } = await getGoogleOAuthTokens({ code });
+        const googleOauthResponse = await getGoogleOAuthTokens({ code });
 
 
         // 3. Decode the ID token to obtain user details.
-        const googleUserDetails: any = jwt.decode(id_token);
+        const googleUserDetails: any = jwt.decode(googleOauthResponse.id_token);
 
         // 4. Check if the user already exists in your database.
         let user = await User.findOne({ email: googleUserDetails.email });
 
         if (user) throw new ApiError(400, "Bad request : user acoount already exists : overrite this with oauth");
-        
+
         // 5. If the user does not exist, create a new user entry with the obtained Google user details.
         if (!user) {
+            const currentTime = new Date().getTime();
+            const expiryTimeMillisec = currentTime + googleOauthResponse.expires_in * 1000;
+
+            console.log("currentTime", currentTime)
+            console.log("googleOauthResponse.expires_in", googleOauthResponse.expires_in)
+            console.log("expiryTimeMillisec", expiryTimeMillisec)
+            console.log("new Date(expiryTimeMillisec)", new Date(expiryTimeMillisec))
+            console.log("new Date(expiryTimeMillisec).getTime()", new Date(expiryTimeMillisec).getTime())
+
             user = await User.create({
                 fullName: googleUserDetails.name,
                 email: googleUserDetails.email,
                 googleId: googleUserDetails.sub,
                 profilePictureUrl: googleUserDetails.picture,
-                is_verified: true // Assume user is verified
+                googleAuthInfo: {
+                    accessToken: googleOauthResponse.access_token,
+                    refreshToken: googleOauthResponse.refresh_token,
+                    expiresAt: new Date(expiryTimeMillisec), // Store expiry time as a Date object
+                    scope: googleOauthResponse.scope
+                },
+                is_verified: true // Assume user is verified by google
             });
         }
-        
+
+
         // 6. Generate access and refresh tokens for the user.
         const { accessToken, refreshToken } = await this.generateAccessAndRefreshToken(user._id);
-        
-        
-        const thirtyDaysInMilliseconds = 30 * 24 * 60 * 60 * 1000; // 30 days in milliseconds
+
+
+        const oneHundredDaysInMilliseconds = 100 * 24 * 60 * 60 * 1000; // 30 days in milliseconds
         const options = {
             httpOnly: true,
             secure: false,
-            maxAge: thirtyDaysInMilliseconds
+            maxAge: oneHundredDaysInMilliseconds
         };
 
-        //TODO: As of now, till this step, everything is working as I thought 
-        /*TODO: Next step is to Save the id token and access token in the database
-        With the user data received from Google(Which I should Make another api call)
-        And then save the user data in the database.And then I Set the cookies and also the session 
-        And I also need to handle the Traditional email password login Also.  
-        */
-       
-       const origin = req.headers.origin || conf.corsOrigin;
-       
-       return res
-       .status(200)
-       .cookie("accessToken", accessToken, options)
-       .cookie("refreshToken", refreshToken, options)
-       .redirect(origin);
+        const origin = req.headers.origin || conf.corsOrigin;
 
+        return res
+            .status(200)
+            .cookie("accessToken", accessToken, options)
+            .cookie("refreshToken", refreshToken, options)
+            .redirect(origin);
+
+    })
+
+    getGoogleUser = asyncHandler(async (req: Request, res: Response) => {
+
+        let user = await User.findOne({ email: req.user?.email });
+        if (!user) throw new ApiError(404, "User not found");
+
+        if (!user.googleAuthInfo) throw new ApiError(400, "User not authenticated with google");
+
+        let accessToken = user.googleAuthInfo?.accessToken;
+
+        if (!isGoogleAccessTokenValid(user.googleAuthInfo.expiresAt)) {
+            //Access token is expired 
+            console.log("Access token is expired");
+            //refresh the access token
+
+            let googleRefreshToken = user.googleAuthInfo.refreshToken;
+            if (!googleRefreshToken) throw new ApiError(400, " No refresh token found in DATABASE");
+
+            accessToken = await refreshGoogleAccessToken(googleRefreshToken, user._id)
+
+            console.log("new access token", accessToken);
+        }else{
+            console.log("Access token is valid");
+        }
+        
+
+        const userDetails = await getGoogleUserProfile(accessToken);
+
+        return res
+            .status(200)
+            .json(
+                new ApiResponse(200, { userDetails }, "user details")
+            );
     })
 
     createNewAccountController = asyncHandler(async (req: Request, res: Response) => {
@@ -270,7 +313,7 @@ export class AuthenticationControllers {
         const isPasswordCorrect = await user.isPasswordCorrect(password);
 
         if (!isPasswordCorrect) {
-            throw new ApiError(400, "Invalid password");
+            throw new ApiError(400, "Invalid password or password does not exist try othe way of signin");
         }
 
         const { accessToken, refreshToken } = await this.generateAccessAndRefreshToken(user._id);
@@ -279,11 +322,11 @@ export class AuthenticationControllers {
             "-password -refreshToken"
         );
 
-        const thirtyDaysInMilliseconds = 30 * 24 * 60 * 60 * 1000; // 30 days in milliseconds
+        const oneHundredDaysInMilliseconds = 100 * 24 * 60 * 60 * 1000; // 30 days in milliseconds
         const options = {
             httpOnly: true,
             secure: false,
-            maxAge: thirtyDaysInMilliseconds
+            maxAge: oneHundredDaysInMilliseconds
         };
 
         return res
@@ -293,9 +336,7 @@ export class AuthenticationControllers {
             .json(
                 new ApiResponse(
                     200,
-                    {
-                        user: loggedInUser,
-                    },
+                    {},
                     "User logged in successfully"
                 )
             );
@@ -316,7 +357,7 @@ export class AuthenticationControllers {
             }
         );
 
-        // const thirtyDaysInMilliseconds = 30 * 24 * 60 * 60 * 1000; // 30 days in milliseconds
+        // const oneHundredDaysInMilliseconds = 100 * 24 * 60 * 60 * 1000; // 30 days in milliseconds
         const options = {
             httpOnly: true,
             secure: false,
@@ -369,11 +410,11 @@ export class AuthenticationControllers {
 
         const { accessToken: newAccessToken, refreshToken: newRefreshToken } = await this.generateAccessAndRefreshToken(user._id);
 
-        const thirtyDaysInMilliseconds = 30 * 24 * 60 * 60 * 1000; // 30 days in milliseconds
+        const oneHundredDaysInMilliseconds = 100 * 24 * 60 * 60 * 1000; // 30 days in milliseconds
         const options = {
             httpOnly: true,
             secure: false,
-            maxAge: thirtyDaysInMilliseconds
+            maxAge: oneHundredDaysInMilliseconds
         };
 
         return res
@@ -408,12 +449,12 @@ export class AuthenticationControllers {
 
         const { accessToken: newAccessToken, refreshToken: newRefreshToken } = await this.generateAccessAndRefreshToken(user._id);
 
-        const thirtyDaysInMilliseconds = 30 * 24 * 60 * 60 * 1000; // 30 days in milliseconds
+        const oneHundredDaysInMilliseconds = 100 * 24 * 60 * 60 * 1000; // 30 days in milliseconds
 
         const options = {
             httpOnly: true,
             secure: false,
-            maxAge: thirtyDaysInMilliseconds
+            maxAge: oneHundredDaysInMilliseconds
         };
 
         return res
@@ -454,11 +495,11 @@ export class AuthenticationControllers {
         res.clearCookie("accessToken")
         res.clearCookie("refreshToken")
 
-        const thirtyDaysInMilliseconds = 30 * 24 * 60 * 60 * 1000; // 30 days in milliseconds
+        const oneHundredDaysInMilliseconds = 100 * 24 * 60 * 60 * 1000; // 30 days in milliseconds
         const options = {
             httpOnly: true,
             secure: false,
-            maxAge: thirtyDaysInMilliseconds
+            maxAge: oneHundredDaysInMilliseconds
         };
 
         return res

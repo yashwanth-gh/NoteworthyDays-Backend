@@ -3,13 +3,20 @@ import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
 import { conf } from "../constants.js";
 
+export interface GoogleAuthInfo {
+    expiresAt: Date;
+    accessToken: string;
+    refreshToken?: string;
+    scope: string;
+}
 export interface UserInput {
     fullName: string;
     email: string;
     password?: string; // Password becomes optional for Google OAuth users
+    refreshToken?: string;
     googleId?: string; // New field to store Google User ID
     profilePictureUrl?: string; // New field to store profile picture URL
-    refreshToken?: string;
+    googleAuthInfo?: GoogleAuthInfo; // New field to store Google OAuth info
     is_verified:boolean;
 }
 
@@ -41,14 +48,17 @@ const userSchema = new mongoose.Schema(
             type: String,
             required: false // Password becomes optional for Google OAuth users
         },
+        refreshToken: {
+            type: String
+        },
         googleId: {
             type: String // New field to store Google User ID
         },
         profilePictureUrl: {
             type: String // New field to store profile picture URL
         },
-        refreshToken: {
-            type: String
+        googleAuthInfo: {
+            type: Object // Store Google OAuth info as an object
         },
         is_verified : {
             type : Boolean,
