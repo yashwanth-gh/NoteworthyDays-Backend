@@ -57,7 +57,7 @@ export function isGoogleAccessTokenValid(expires_at: Date): boolean {
     const diffeenceTime = expireTime - currentTime;
     const timeInMinutes = diffeenceTime / (1000 * 60);
 
-    console.log("remaining time for access token to expire in min", timeInMinutes)
+    // console.log("remaining time for access token to expire in min", timeInMinutes)
 
     if (expireTime <= currentTime) {
         // Token is expired

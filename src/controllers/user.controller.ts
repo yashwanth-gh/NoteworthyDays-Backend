@@ -65,12 +65,6 @@ export class AuthenticationControllers {
             const currentTime = new Date().getTime();
             const expiryTimeMillisec = currentTime + googleOauthResponse.expires_in * 1000;
 
-            console.log("currentTime", currentTime)
-            console.log("googleOauthResponse.expires_in", googleOauthResponse.expires_in)
-            console.log("expiryTimeMillisec", expiryTimeMillisec)
-            console.log("new Date(expiryTimeMillisec)", new Date(expiryTimeMillisec))
-            console.log("new Date(expiryTimeMillisec).getTime()", new Date(expiryTimeMillisec).getTime())
-
             user = await User.create({
                 fullName: googleUserDetails.name,
                 email: googleUserDetails.email,
