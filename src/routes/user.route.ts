@@ -2,6 +2,7 @@ import { Request, Router } from "express";
 import { signupValidation,emailValidation, changePasswordValidation } from "../middlewares/authDataValidation.middleware.js";
 import {verifyJWT} from '../middlewares/verifyJWT.middleware.js';
 import authenticationControllers from "../controllers/user.controller.js";
+
 const router = Router();
 
 //~ --------- PUBLIC ROUTES ---------
@@ -20,11 +21,4 @@ router.route("/get-google-userprofile").get(verifyJWT,authenticationControllers.
 router.route("/change-fullname").patch(verifyJWT,authenticationControllers.changeUserFullname)
 router.route("/delete-account").delete(verifyJWT,authenticationControllers.deleteUserAccount)
 
-//~ ------- TEST ---------
-router.route("/test").get(verifyJWT,(req,res)=>{
-    const data = req?.user;
-    res.json({
-        data
-    })
-})
 export default router;

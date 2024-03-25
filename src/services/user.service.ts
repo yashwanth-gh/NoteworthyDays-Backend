@@ -5,6 +5,7 @@ import { log } from "console";
 import { ApiError } from "../utils/ApiError.js";
 import { GoogleTokens, UserProfileData } from "../types/custom/index.js";
 import User from "../models/user.model.js";
+import { handleAxiosError } from "../utils/handleAxiosErrors.js";
 
 
 
@@ -30,7 +31,7 @@ export async function getGoogleOAuthTokens({ code }: { code: string }): Promise<
         return response.data;
     } catch (error) {
         console.log("ERROR :: getGoogleOAuthTokens :: Failed to fetch google oauth tokens", error);
-        throw new ApiError(500, "Failed to fetch google oauth tokens");
+        handleAxiosError(error, "Failed to fetch google google oauth tokens")
     }
 }
 
@@ -46,7 +47,7 @@ export async function getGoogleUserProfile(accessToken: string): Promise<UserPro
         return response.data;
     } catch (error) {
         console.log("ERROR :: getGoogleUserProfile :: Failed to fetch google user profile", error);
-        throw new ApiError(500, "Failed to fetch google user profile");
+        handleAxiosError(error, "Failed to fetch google user profile")
     }
 }
 
@@ -98,12 +99,12 @@ export async function refreshGoogleAccessToken(refreshToken: string, userId: str
             });
         } catch (error) {
             console.error('Error updating token expiration and access token:', error);
-            throw new Error('Failed to update token expiration and access token');
+            handleAxiosError(error, 'Failed to update token expiration and access token');
         }
 
         return accessToken;
     } catch (error) {
         console.error('Error refreshing access token:', error);
-        throw new Error('Failed to refresh access token');
+        handleAxiosError(error, 'Failed to refresh access token');
     }
 }

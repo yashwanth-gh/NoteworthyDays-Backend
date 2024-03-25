@@ -34,7 +34,7 @@ const emailValidation = asyncHandler(async (req, res, next) => {
   let errors = validationResult(req);
   if (!errors.isEmpty()) {
     console.log(errors.array().map((err) => err.msg));
-    throw new ApiError(400, "Login validation failed");
+    throw new ApiError(400, "email validation failed");
   } else {
     next();
   }

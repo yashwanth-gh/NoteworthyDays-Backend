@@ -58,7 +58,7 @@ export class AuthenticationControllers {
         // 4. Check if the user already exists in your database.
         let user = await User.findOne({ email: googleUserDetails.email });
 
-        if (user) throw new ApiError(400, "Bad request : user acoount already exists : overrite this with oauth");
+        if (user) throw new ApiError(409, "Conflict : user acoount already exists : overrite this with oauth");
 
         // 5. If the user does not exist, create a new user entry with the obtained Google user details.
         if (!user) {
@@ -180,9 +180,9 @@ export class AuthenticationControllers {
 
 
         return res
-            .status(200)
+            .status(201)
             .json(
-                new ApiResponse(200, { createdUser }, "user created")
+                new ApiResponse(201,createdUser, "user created")
             );
     })
 
@@ -544,31 +544,6 @@ export class AuthenticationControllers {
             )
     })
 }
-
-
-
-/* //FIXME: This is a test controller to just check. Whether the login controller is working properly this controller. 
-//Just just Receives the cookies sent back by the browser. 
-const testCont = asyncHandler(async(req,res)=>{
-    const data = req.body;
-    console.log(data);
-    const access_token = req.cookies.accessToken;
-    const refresh_token = req.cookies.refreshToken;
-    // console.log({access_token,refresh_token});
-    //*Working Correctly
-
-    res.status(200)
-    .json(
-        new ApiResponse(
-            200,
-            {
-                "response":"nothing all ok"
-            },
-            "User logged in successfully"
-        )
-    );
-}) */
-
 
 
 const authenticationControllers = new AuthenticationControllers();
