@@ -1,6 +1,5 @@
 import mongoose, { Schema } from "mongoose";
-import jwt from "jsonwebtoken";
-import { conf } from "../constants";
+
 
 export interface ResetPassword extends Document{
     user_id: string;
@@ -23,27 +22,13 @@ const resetPasswordSchema = new Schema(
             type: Date,
             default: Date.now,
             required: true,
-            get: function (this: { timestamp: Date }) {
-                return this.timestamp.getTime();
-            },
-            set: function (this: { timestamp: Date }, timestamp: any) {
-                this.timestamp = new Date(timestamp);
-            }
+            get: (timestamp: Date) => timestamp.getTime(),
+            set: (timestamp: any) => new Date(timestamp)
         }
     }, {
     timestamps: true,
 }
 )
 
-resetPasswordSchema.methods.generateResetPasswordToken = function () {
-    return jwt.sign(
-        {
-            user_id: this.user_id
-        },
-        conf.resetPasswordTokenSecret,
-        {
-            expiresIn: conf.resetPasswordTokenExpiry
-        });
-}
 
 export default mongoose.model<ResetPassword>("ResetPassword",resetPasswordSchema)

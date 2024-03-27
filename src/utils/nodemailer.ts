@@ -15,7 +15,7 @@ const transporter = nodemailer.createTransport({
 });
 
 export const sendVerificationMail = (user: UserDocument) => {
-    const mailTemplatePath = path.resolve("public", "new-email.html");
+    const mailTemplatePath = path.resolve("public", "verificationMail.html");
     const mailBodyTemplate = fs.readFileSync(mailTemplatePath, "utf-8");
     const VerificationCode = Math.floor(Math.random() * 900000) + 100000;
     const finalEmailTemplate = mailBodyTemplate
@@ -44,5 +44,33 @@ export const sendVerificationMail = (user: UserDocument) => {
     }
 
     return VerificationCode;
+}
+export const sendResetPasswordMail = (user:UserDocument, resetToken:string):void => {
+    const resetPasswordLink = `${conf.corsOrigin}/resetPassword?resetToken=${resetToken}`;
+    const mailTemplatePath = path.resolve("public", "forgotPassword.html");
+    const mailBodyTemplate = fs.readFileSync(mailTemplatePath, "utf-8");
+    const finalEmailTemplate = mailBodyTemplate
+        .replaceAll("{{userName}}", user.fullName)
+        .replaceAll("{{senderName}}", "Yashwanth B M")
+        .replace("{{resetLink}}", resetPasswordLink);
+
+    const data = {
+        from: conf.nodemailerSenderMailAddress,
+        to: user.email,
+        subject: "Reset Your Password",
+        html: finalEmailTemplate,
+    }
+
+    try {
+        transporter.sendMail(data, (err, info) => {
+            if (err) {
+                console.log(err);
+            } else {
+                console.log("mail sent!");
+            }
+        });
+    } catch (error) {
+        throw new ApiError(500, "Server error : Nodemailer sendmail error")
+    }
 }
 

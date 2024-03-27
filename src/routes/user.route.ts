@@ -12,6 +12,8 @@ router.route("/oauth/google").get(authenticationControllers.AuthenticateWithGoog
 router.route("/refresh-access-token").get(authenticationControllers.refreshAccessToken)
 router.route("/send-otp-to-mail").post(emailValidation,authenticationControllers.sendOtpToMail)
 router.route("/verify-otp").post(authenticationControllers.verifyOTP)
+router.route("/forgot-password").post(authenticationControllers.sendMailToResetPassword)
+
 
 //~ --------- PRIVATE ROUTES ---------
 router.route("/signout").get(verifyJWT,authenticationControllers.logout)

@@ -12,6 +12,8 @@ export const conf = {
     refreshTokenSecret: String(process.env.REFRESH_TOKEN_SECRET),
     accessTokenExpiry: String(process.env.ACCESS_TOKEN_EXPIRY),
     refreshTokenExpiry: String(process.env.REFRESH_TOKEN_EXPIRY),
+    resetPasswordTokenSecret: String(process.env.RESET_PASSWORD_TOKEN_SECRET),
+    resetPasswordTokenExpiry: String(process.env.RESET_PASSWORD_TOKEN_EXPIRY),
     nodemailerSenderMailAddress :  String(process.env.NODEMAILER_SENDER_EMAIL_ADDRESS),
     nodemailerSenderMailPasskey :  String(process.env.NODEMAILER_SENDER_EMAIL_PASSKEY),
 }

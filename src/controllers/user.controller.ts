@@ -8,8 +8,10 @@ import jwt from "jsonwebtoken";
 import { Request, Response } from "express";
 import { conf } from "../constants.js";
 import UserVerificationModel from "../models/UserVerification.model.js";
-import { sendVerificationMail } from "../utils/nodemailer.js";
+import { sendResetPasswordMail, sendVerificationMail } from "../utils/nodemailer.js";
 import { hasOneMinutePassed, hasOtpExpired } from '../utils/otpHelper.js'
+import resetPasswordModel from "../models/resetPassword.model.js";
+import { generateResetPasswordToken } from "../utils/jwtHelper.js";
 
 export class AuthenticationControllers {
 
@@ -122,10 +124,10 @@ export class AuthenticationControllers {
             accessToken = await refreshGoogleAccessToken(googleRefreshToken, user._id)
 
             console.log("new access token", accessToken);
-        }else{
+        } else {
             console.log("Access token is valid");
         }
-        
+
 
         const userDetails = await getGoogleUserProfile(accessToken);
 
@@ -182,7 +184,7 @@ export class AuthenticationControllers {
         return res
             .status(201)
             .json(
-                new ApiResponse(201,createdUser, "user created")
+                new ApiResponse(201, createdUser, "user created")
             );
     })
 
@@ -203,6 +205,7 @@ export class AuthenticationControllers {
         const oldOtdData = await UserVerificationModel.findOne({ user_id: user._id });
 
         if (oldOtdData) {
+            console.log(Number(oldOtdData.timestamp))
             const canSendOtp: boolean = hasOneMinutePassed(Number(oldOtdData.timestamp));
             if (!canSendOtp) {
                 throw new ApiError(400, "Try after sometime!")
@@ -215,7 +218,7 @@ export class AuthenticationControllers {
 
         await UserVerificationModel.findOneAndUpdate(
             { user_id: user._id },
-            { otp: VerificationCode, timestamp: new Date(cDate.getTime()) },
+            { otp: VerificationCode, timestamp: new Date(cDate.getTime()), codeType: "Verification-code" },
             { upsert: true, new: true, setDefaultsOnInsert: true }
         )
 
@@ -540,6 +543,64 @@ export class AuthenticationControllers {
                     200,
                     {},
                     "User accound deleted successfully!"
+                )
+            )
+    })
+
+    sendMailToResetPassword = asyncHandler(async (req: Request, res: Response) => {
+        const { email } = req.body;
+
+        const user = await User.findOne({ email });
+
+        if (!user) {
+            /* 
+            Thinking why there is no error thrown here. i read the below code in some article so i tried it.
+            " When they submit the email address, this will trigger the back-end to check if that email exists in the database. Even if the email doesn’t exist, we’ll show a message that says the email has been sent successfully. That way we don’t give attackers any indication that they should try a different email address. "
+            */
+            return res
+                .status(200)
+                .json(
+                    new ApiResponse(
+                        200,
+                        {},
+                        "Reset link sent ;)"
+                    )
+                )
+        }
+
+        const oldResetPasswordData = await resetPasswordModel.findOne({ user_id: user._id });
+
+        if (oldResetPasswordData) {
+            const canSendMail: boolean = hasOneMinutePassed(Number(oldResetPasswordData.timestamp));
+            if (!canSendMail) {
+                throw new ApiError(400, "Try after sometime!")
+            }
+        }
+
+        //Generating reset password token to send as a parameter in a link to resent the password
+        const resetToken = generateResetPasswordToken(user._id);
+
+        //Save new document or update the existing document to new reset token
+        const cDate = new Date();
+        const resetData = await resetPasswordModel.findOneAndUpdate(
+            { user_id: user._id },
+            { resetToken: resetToken, timestamp: new Date(cDate.getTime()) },
+            { upsert: true, new: true, setDefaultsOnInsert: true }
+        )
+
+        if (!resetData) {
+            throw new ApiError(500, "Internal server error : Reset token not saved in database")
+        }
+        //sent the reset link to the user email address only if the reset token is saved successfully in the database
+        await sendResetPasswordMail(user, resetToken);
+
+        return res
+            .status(200)
+            .json(
+                new ApiResponse(
+                    200,
+                    {},
+                    "OTP sent to your mail successfully"
                 )
             )
     })
