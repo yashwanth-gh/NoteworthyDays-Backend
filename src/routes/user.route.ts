@@ -1,5 +1,5 @@
 import { Request, Router } from "express";
-import { signupValidation,emailValidation, changePasswordValidation } from "../middlewares/authDataValidation.middleware.js";
+import { signupValidation,emailValidation, changePasswordValidation, passwordValidation } from "../middlewares/authDataValidation.middleware.js";
 import {verifyJWT} from '../middlewares/verifyJWT.middleware.js';
 import authenticationControllers from "../controllers/user.controller.js";
 
@@ -13,6 +13,7 @@ router.route("/refresh-access-token").get(authenticationControllers.refreshAcces
 router.route("/send-otp-to-mail").post(emailValidation,authenticationControllers.sendOtpToMail)
 router.route("/verify-otp").post(authenticationControllers.verifyOTP)
 router.route("/forgot-password").post(authenticationControllers.sendMailToResetPassword)
+router.route("/forgot-reset-password").post(passwordValidation,authenticationControllers.resetPasswordWithToken)
 
 
 //~ --------- PRIVATE ROUTES ---------

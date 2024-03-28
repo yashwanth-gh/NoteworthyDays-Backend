@@ -40,6 +40,30 @@ const emailValidation = asyncHandler(async (req, res, next) => {
   }
 });
 
+const passwordValidation = asyncHandler(async (req, res, next) => {
+  const rules = [
+    body("password").trim().notEmpty().withMessage("Password is required"),
+    body("password")
+      .trim()
+      .isLength({ min: 8 })
+      .withMessage("Password must be at least 8 characters long"),
+    body("password")
+      .trim()
+      .matches(/^(?=.*[!@#$%^&*()_+{}\[\]:;<>,.?/~\-])(?=.*\d)(?=.*[a-zA-Z]).{8,}$/)
+      .withMessage("Password must contain at least one alphabet, one digit, and one special character"),
+  ];
+
+  await Promise.all(rules.map((rule) => rule.run(req)));
+  let errors = validationResult(req);
+
+  if (!errors.isEmpty()) {
+    console.log(errors.array().map((err) => err.msg));
+    throw new ApiError(400, "Password validation failed");
+  } else {
+    next();
+  }
+});
+
 const changePasswordValidation = asyncHandler(async (req, res, next) => {
   const rules = [
     body("email").trim().isEmail().withMessage("Email is invalid"),
@@ -66,8 +90,10 @@ const changePasswordValidation = asyncHandler(async (req, res, next) => {
 });
 
 
+
 export {
   signupValidation,
   emailValidation,
-  changePasswordValidation
+  changePasswordValidation,
+  passwordValidation
 }

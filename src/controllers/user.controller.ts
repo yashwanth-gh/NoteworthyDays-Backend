@@ -604,8 +604,48 @@ export class AuthenticationControllers {
                 )
             )
     })
-}
 
+    resetPasswordWithToken = asyncHandler(async (req: Request, res: Response) => {
+        const { password } = req.body;
+        const { resetToken } = req.query;
+
+        // Check if the JWT is expired or valid. This will automatically throw error if invalid. 
+        const decodedResetTokenData = await jwt.verify(resetToken as string,conf.resetPasswordTokenSecret)  as jwt.JwtPayload;
+
+        if(!decodedResetTokenData) throw new ApiError(400,"Bad request : Invalid reset token")
+
+        // Get user Id. If the token is valid 
+        const decodedUserId = decodedResetTokenData.user_id;
+
+        //Check if there is a document existing In reset password model. 
+        const resetPasswordData = await resetPasswordModel.findOne({ user_id: decodedUserId });
+
+        if (!resetPasswordData) {
+            throw new ApiError(404, "Not Found : No Token Data found in DB")
+        }
+
+        const user = await User.findById(resetPasswordData.user_id);
+
+        if (!user) {
+            throw new ApiError(404, "Not found : User not found")
+        }
+
+        user.password = password;
+        await user.save({ validateBeforeSave: false });
+
+        await resetPasswordModel.deleteOne({ user_id: user._id });
+
+        return res
+            .status(200)
+            .json(
+                new ApiResponse(
+                    200,
+                    {},
+                    "Password changed successfully"
+                )
+            )
+    })
+}
 
 const authenticationControllers = new AuthenticationControllers();
 
