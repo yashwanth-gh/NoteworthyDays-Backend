@@ -19,7 +19,7 @@ export const sendVerificationMail = (user: UserDocument) => {
     const mailBodyTemplate = fs.readFileSync(mailTemplatePath, "utf-8");
     const VerificationCode = Math.floor(Math.random() * 900000) + 100000;
     const finalEmailTemplate = mailBodyTemplate
-        .replaceAll("{{platformName}}", "Dummy Name")
+        .replaceAll("{{platformName}}", "<Company_name>")
         .replaceAll("{{userName}}", user.fullName)
         .replaceAll("{{senderName}}", "Yashwanth B M")
         .replace("{{OTP}}", VerificationCode.toString());
@@ -45,7 +45,7 @@ export const sendVerificationMail = (user: UserDocument) => {
 
     return VerificationCode;
 }
-export const sendResetPasswordMail = (user:UserDocument, resetToken:string):void => {
+export const sendResetPasswordMail = (user: UserDocument, resetToken: string): void => {
     const resetPasswordLink = `${conf.corsOrigin}/resetPassword?resetToken=${resetToken}`;
     const mailTemplatePath = path.resolve("public", "forgotPassword.html");
     const mailBodyTemplate = fs.readFileSync(mailTemplatePath, "utf-8");
@@ -58,6 +58,91 @@ export const sendResetPasswordMail = (user:UserDocument, resetToken:string):void
         from: conf.nodemailerSenderMailAddress,
         to: user.email,
         subject: "Reset Your Password",
+        html: finalEmailTemplate,
+    }
+
+    try {
+        transporter.sendMail(data, (err, info) => {
+            if (err) {
+                console.log(err);
+            } else {
+                console.log("mail sent!");
+            }
+        });
+    } catch (error) {
+        throw new ApiError(500, "Server error : Nodemailer sendmail error")
+    }
+}
+export const sendVerifyAdminMail = (user: UserDocument): void => {
+
+    const mailTemplatePath = path.resolve("public", "verifyNewAdmin.html");
+    const mailBodyTemplate = fs.readFileSync(mailTemplatePath, "utf-8");
+    const finalEmailTemplate = mailBodyTemplate
+        .replaceAll("{{platformName}}", "<Company_name>")
+        .replaceAll("{{newAdminName}}", user.fullName)
+        .replace("{{newAdminEmail}}", user.email)
+        .replace("{{senderName}}", "Yashwanth B M");
+
+    const data = {
+        from: conf.nodemailerSenderMailAddress,
+        to: user.email,
+        subject: "Verify New Admin",
+        html: finalEmailTemplate,
+    }
+
+    try {
+        transporter.sendMail(data, (err, info) => {
+            if (err) {
+                console.log(err);
+            } else {
+                console.log("mail sent!");
+            }
+        });
+    } catch (error) {
+        throw new ApiError(500, "Server error : Nodemailer sendmail error")
+    }
+}
+export const sendAccountVerificationSuccessulMail = (user: UserDocument): void => {
+
+    const mailTemplatePath = path.resolve("public", "accountSuccess.html");
+    const mailBodyTemplate = fs.readFileSync(mailTemplatePath, "utf-8");
+    const finalEmailTemplate = mailBodyTemplate
+        .replaceAll("{{platformName}}", "<Company_name>")
+        .replaceAll("{{userName}}", user.fullName)
+        .replace("{{senderName}}", "Yashwanth B M");
+
+    const data = {
+        from: conf.nodemailerSenderMailAddress,
+        to: user.email,
+        subject: "Welcome User",
+        html: finalEmailTemplate,
+    }
+
+    try {
+        transporter.sendMail(data, (err, info) => {
+            if (err) {
+                console.log(err);
+            } else {
+                console.log("mail sent!");
+            }
+        });
+    } catch (error) {
+        throw new ApiError(500, "Server error : Nodemailer sendmail error")
+    }
+}
+export const sendSuccessulAdminApprovedMail = (user: UserDocument): void => {
+
+    const mailTemplatePath = path.resolve("public", "approvedAdminRequest.html");
+    const mailBodyTemplate = fs.readFileSync(mailTemplatePath, "utf-8");
+    const finalEmailTemplate = mailBodyTemplate
+        .replaceAll("{{platformName}}", "<Company_name>")
+        .replaceAll("{{userName}}", user.fullName)
+        .replace("{{senderName}}", "Yashwanth B M");
+
+    const data = {
+        from: conf.nodemailerSenderMailAddress,
+        to: user.email,
+        subject: "Welcome Admin",
         html: finalEmailTemplate,
     }
 

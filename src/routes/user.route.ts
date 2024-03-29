@@ -1,27 +1,14 @@
-import { Request, Router } from "express";
-import { signupValidation,emailValidation, changePasswordValidation, passwordValidation } from "../middlewares/authDataValidation.middleware.js";
+import { Router } from "express";
+import { changePasswordValidation } from "../middlewares/authDataValidation.middleware.js";
 import {verifyJWT} from '../middlewares/verifyJWT.middleware.js';
-import authenticationControllers from "../controllers/user.controller.js";
+import userControllers from "../controllers/user.controller.js";
 
-const router = Router();
 
-//~ --------- PUBLIC ROUTES ---------
-router.route("/signup").post(signupValidation,authenticationControllers.createNewAccountController);
-router.route("/signin").post(emailValidation,authenticationControllers.loginExistingUserController);
-router.route("/oauth/google").get(authenticationControllers.AuthenticateWithGoogleOAuth);
-router.route("/refresh-access-token").get(authenticationControllers.refreshAccessToken)
-router.route("/send-otp-to-mail").post(emailValidation,authenticationControllers.sendOtpToMail)
-router.route("/verify-otp").post(authenticationControllers.verifyOTP)
-router.route("/forgot-password").post(authenticationControllers.sendMailToResetPassword)
-router.route("/forgot-reset-password").post(passwordValidation,authenticationControllers.resetPasswordWithToken)
-
+const userRouter = Router();
 
 //~ --------- PRIVATE ROUTES ---------
-router.route("/signout").get(verifyJWT,authenticationControllers.logout)
-router.route("/change-password").post([verifyJWT,changePasswordValidation],authenticationControllers.changeCurrentPassword)
-router.route("/getuser").get(verifyJWT,authenticationControllers.getCurrentUser)
-router.route("/get-google-userprofile").get(verifyJWT,authenticationControllers.getGoogleUser)
-router.route("/change-fullname").patch(verifyJWT,authenticationControllers.changeUserFullname)
-router.route("/delete-account").delete(verifyJWT,authenticationControllers.deleteUserAccount)
+userRouter.route("/change-password").post([verifyJWT,changePasswordValidation],userControllers.changeCurrentPassword)
+userRouter.route("/change-fullname").patch(verifyJWT,userControllers.changeUserFullname)
+userRouter.route("/delete-account").delete(verifyJWT,userControllers.deleteUserAccount)
 
-export default router;
+export default userRouter;

@@ -20,8 +20,14 @@ app.use(cookieParser());
 
 //* --Api routes
 
-import userRouter from './routes/user.route.js';
+import authRouter from './routes/auth.route.js';
+app.use("/api/v1/auth",authRouter)
 
+import userRouter from './routes/user.route.js';
 app.use("/api/v1/users",userRouter)
+
+import adminRouter from './routes/admin.route.js';
+app.use("/api/v1/admin",adminRouter)
+
 
 export { app };

@@ -17,18 +17,25 @@ export interface UserInput {
     googleId?: string; // New field to store Google User ID
     profilePictureUrl?: string; // New field to store profile picture URL
     googleAuthInfo?: GoogleAuthInfo; // New field to store Google OAuth info
-    is_verified:boolean;
+    is_email_verified: boolean;
+    role: {
+        role_type: "admin" | "user";
+        is_role_verified: boolean;
+    };
 }
 
-export interface UserDocument extends UserInput, Document {
+export interface UserDocument extends UserInput, Document, Methods {
     createdAt: Date;
     updatedAt: Date;
+}
+
+interface Methods {
     isPasswordCorrect(password: string): Promise<boolean>;
     generateAccessToken(): string;
     generateRefreshToken(): string;
 }
 
-const userSchema = new mongoose.Schema(
+const userSchema = new mongoose.Schema<UserDocument>(
     {
         fullName: {
             type: String,
@@ -60,9 +67,21 @@ const userSchema = new mongoose.Schema(
         googleAuthInfo: {
             type: Object // Store Google OAuth info as an object
         },
-        is_verified : {
-            type : Boolean,
-            default: false
+        role: {
+            role_type: {
+                type: String,
+                enum: ["admin", "user"],
+                default: "user"
+            },
+            is_role_verified: {
+                type: Boolean,
+                default: false
+            }
+        },
+        is_email_verified: {
+            type: Boolean,
+            default: false,
+            required: true
         }
     },
     {
@@ -70,7 +89,7 @@ const userSchema = new mongoose.Schema(
     }
 )
 
-userSchema.pre("save", async function (next) {
+userSchema.pre<UserDocument>("save", async function (next) {
     if (!this.isModified("password") || !this.password) return next();
     this.password = await bcrypt.hash(this.password, 10);
     return next();
@@ -81,29 +100,30 @@ userSchema.methods.isPasswordCorrect = async function (password: string): Promis
 }
 
 
-userSchema.methods.generateAccessToken = function(){
+userSchema.methods.generateAccessToken = function (): string {
     return jwt.sign(
         {
-        _id : this._id,
-        email : this.email,
-        fullName : this.fullName,
+            _id: this._id,
+            email: this.email,
+            fullName: this.fullName,
+            role: this.role
         },
         conf.accessTokenSecret,
         {
-            expiresIn : conf.accessTokenExpiry
+            expiresIn: conf.accessTokenExpiry
         }
     )
 };
 
 
-userSchema.methods.generateRefreshToken = function(){
-  return jwt.sign(
+userSchema.methods.generateRefreshToken = function (): string {
+    return jwt.sign(
         {
-        _id : this._id,
+            _id: this._id,
         },
         conf.refreshTokenSecret,
         {
-            expiresIn : conf.refreshTokenExpiry
+            expiresIn: conf.refreshTokenExpiry
         }
     )
 };
