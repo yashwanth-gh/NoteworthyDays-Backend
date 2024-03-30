@@ -7,10 +7,11 @@ const authRouter = Router();
 
 //~ --------- ADMIN PUBLIC ROUTES ---------
 authRouter.route("/admin/register").post(signupValidation,authenticationControllers.createNewAdminAccount);
+authRouter.route("/admin/signin").post(emailValidation,authenticationControllers.loginExistingAdmin);
 
 //~ --------- USER PUBLIC ROUTES ---------
 authRouter.route("/signup").post(signupValidation,authenticationControllers.createNewUserAccount);
-authRouter.route("/signin").post(emailValidation,authenticationControllers.loginExistingUserController);
+authRouter.route("/signin").post(emailValidation,authenticationControllers.loginExistingUser);
 authRouter.route("/oauth/google").get(authenticationControllers.AuthenticateWithGoogleOAuth);
 authRouter.route("/refresh-access-token").get(authenticationControllers.refreshAccessToken)
 authRouter.route("/send-otp-to-mail").post(emailValidation,authenticationControllers.sendOtpToMail)

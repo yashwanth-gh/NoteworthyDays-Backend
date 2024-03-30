@@ -170,7 +170,12 @@ export class AuthenticationControllers {
             fullName,
             email,
             password,
-            is_verified: false
+            is_verified: false,
+            account_status: "pending",
+            role: {
+                role_type: "user",
+                is_role_verified: false
+            }
         });
 
         const createdUser = await User.findById(user._id).select(
@@ -186,6 +191,72 @@ export class AuthenticationControllers {
                 new ApiResponse(201, createdUser, "user created")
             );
     })
+
+    loginExistingUser = asyncHandler(async (req: Request, res: Response) => {
+        const { email, password } = req.body;
+
+        const user = await User.findOne({ email });
+
+        if (!user) {
+            throw new ApiError(404, "User not found");
+        }
+
+        //Don't allow admin to use this endpoint this endpoint is only for user
+        if (user.role.role_type !== "user") {
+            throw new ApiError(401, "Only users can use this endpoint,if you are admin use different endpoint to login");
+        }
+
+        //also check if user account status is active don't allow "pending", "suspended" and "blocked"
+        if (user.account_status !== "active") {
+            throw new ApiError(401, "User account status is not active, Please check user account status using different endpoint");
+        }
+
+        //also check if user email is verified or not
+        if (!user.is_email_verified) {
+            throw new ApiError(401, "User email is not verified, Please verify user email by sending OTP");
+        }
+
+        //also check if user role is verified or not
+        if (!user.role.is_role_verified) {
+            throw new ApiError(401, "User role is not verified, Please verify user role by sending OTP");
+        }
+
+        const isPasswordCorrect = await user.isPasswordCorrect(password);
+
+        if (!isPasswordCorrect) {
+            throw new ApiError(400, "Invalid password or password does not exist try othe way of signin");
+        }
+
+        const { accessToken, refreshToken } = await this.generateAccessAndRefreshToken(user._id);
+
+        const loggedInUser = await User.findById(user._id).select(
+            "-password -refreshToken -googleAuthInfo"
+        );
+
+        if (!loggedInUser) {
+            throw new ApiError(500, "User not found")
+        }
+
+        const oneHundredDaysInMilliseconds = 100 * 24 * 60 * 60 * 1000; // 30 days in milliseconds
+        const options = {
+            httpOnly: true,
+            secure: false,
+            maxAge: oneHundredDaysInMilliseconds
+        };
+
+        return res
+            .status(200)
+            .cookie("accessToken", accessToken, options)
+            .cookie("refreshToken", refreshToken, options)
+            .json(
+                new ApiResponse(
+                    200,
+                    loggedInUser,
+                    "User logged in successfully"
+                )
+            );
+
+    });
 
     createNewAdminAccount = asyncHandler(async (req: Request, res: Response) => {
         const { fullName, email, password } = req.body;
@@ -204,7 +275,8 @@ export class AuthenticationControllers {
             role: {
                 role_type: "admin",
                 is_role_verified: false
-            }
+            },
+            account_status: "pending"
         });
 
         const createdUser = await User.findById(user._id).select(
@@ -219,6 +291,70 @@ export class AuthenticationControllers {
                 new ApiResponse(201, createdUser, "user created")
             );
     })
+
+    loginExistingAdmin = asyncHandler(async (req: Request, res: Response) => {
+        const { email, password } = req.body;
+
+        const user = await User.findOne({ email });
+
+        if (!user) {
+            throw new ApiError(404, "Admin not found");
+        }
+
+        if (user.role.role_type !== 'admin') {
+            throw new ApiError(401, "This Api endpoint is for admin login only, users should use different endpoint")
+        }
+        
+        //also check if user email is verified or not
+        if (!user.is_email_verified) {
+            throw new ApiError(401, "Admin email is not verified, Please verify admin email by sending OTP");
+        }
+
+        if (user.role.role_type === 'admin' && user.role.is_role_verified === false) {
+            throw new ApiError(401, "Admin account is not verified yet, please wait till account is verified!");
+        }
+
+        //also check if user account status is active don't allow "pending", "suspended" and "blocked"
+        if (user.account_status !== "active") {
+            throw new ApiError(401, "Admin account status is not active, Please check this account's status using different endpoint");
+        }
+
+        const isPasswordCorrect = await user.isPasswordCorrect(password);
+
+        if (!isPasswordCorrect) {
+            throw new ApiError(400, "Invalid password or password does not exist try othe way of signin");
+        }
+
+        const { accessToken, refreshToken } = await this.generateAccessAndRefreshToken(user._id);
+
+        const loggedInUser = await User.findById(user._id).select(
+            "-password -refreshToken -googleAuthInfo"
+        );
+
+        if (!loggedInUser) {
+            throw new ApiError(500, "Admin not found")
+        }
+
+        const oneHundredDaysInMilliseconds = 100 * 24 * 60 * 60 * 1000; // 30 days in milliseconds
+        const options = {
+            httpOnly: true,
+            secure: false,
+            maxAge: oneHundredDaysInMilliseconds
+        };
+
+        return res
+            .status(200)
+            .cookie("accessToken", accessToken, options)
+            .cookie("refreshToken", refreshToken, options)
+            .json(
+                new ApiResponse(
+                    200,
+                    loggedInUser,
+                    "Admin logged in successfully"
+                )
+            );
+
+    });
 
     sendOtpToMail = asyncHandler(async (req: Request, res: Response) => {
 
@@ -318,6 +454,7 @@ export class AuthenticationControllers {
         // check the role of registered user and make decision accordingly
         if (user.role.role_type === 'user') {
             user.role.is_role_verified = true;
+            user.account_status = "active";
             await sendAccountVerificationSuccessulMail(user);
         }
         if (user.role.role_type === 'admin' && user.role.is_role_verified === false) {
@@ -336,54 +473,7 @@ export class AuthenticationControllers {
                 )
             )
 
-
     })
-
-    loginExistingUserController = asyncHandler(async (req: Request, res: Response) => {
-        const { email, password } = req.body;
-
-        const user = await User.findOne({ email });
-
-        if (!user) {
-            throw new ApiError(404, "User not found");
-        }
-
-        if (user.role.role_type === 'admin' && user.role.is_role_verified === false) {
-            throw new ApiError(400, "Admin account is not verified yet, please wait till account is verified!");
-        }
-
-        const isPasswordCorrect = await user.isPasswordCorrect(password);
-
-        if (!isPasswordCorrect) {
-            throw new ApiError(400, "Invalid password or password does not exist try othe way of signin");
-        }
-
-        const { accessToken, refreshToken } = await this.generateAccessAndRefreshToken(user._id);
-
-        const loggedInUser = await User.findById(user._id).select(
-            "-password -refreshToken"
-        );
-
-        const oneHundredDaysInMilliseconds = 100 * 24 * 60 * 60 * 1000; // 30 days in milliseconds
-        const options = {
-            httpOnly: true,
-            secure: false,
-            maxAge: oneHundredDaysInMilliseconds
-        };
-
-        return res
-            .status(200)
-            .cookie("accessToken", accessToken, options)
-            .cookie("refreshToken", refreshToken, options)
-            .json(
-                new ApiResponse(
-                    200,
-                    {},
-                    "User logged in successfully"
-                )
-            );
-
-    });
 
     logout = asyncHandler(async (req: Request, res: Response) => {
 

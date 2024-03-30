@@ -56,7 +56,7 @@ export const verifyJWT = asyncHandler(async (req:Request, _ , next:NextFunction)
     const user = await User
         .findById(decodedToken?._id)
         .select(
-            "-password -refreshToken"
+            "-password -refreshToken -googleAuthInfo"
         );
 
     // (8)

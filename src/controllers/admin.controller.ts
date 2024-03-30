@@ -62,7 +62,7 @@ export class AdminController {
                 "role.role_type": "admin",
                 "role.is_role_verified": false
             },
-            { $set: { "role.is_role_verified": true } },
+            { $set: { "role.is_role_verified": true,"account_status":"active" } },
             { new: true }
         ).select("-password") as UserDocument
 
@@ -84,6 +84,49 @@ export class AdminController {
 
     })
 
+    viewAllUsers = asyncHandler(async (req: Request, res: Response) => {
+
+        const users: UserDocumentArray = await userModel.find({ "role.role_type": "user" }).select("-password -refreshToken -googleAuthInfo");
+
+        if (!users) {
+            throw new ApiError(404, "No users found");
+        }
+
+        return res.status(200).json(
+            new ApiResponse(
+                200,
+                users,
+                "All users fetched successfully"
+            )
+        )
+    })
+
+    viewAllUsersByAccountStatus = asyncHandler(async (req: Request, res: Response) => {
+
+        const accountStatus = req.query.accountStatus as string;
+
+        if (!accountStatus) {
+            throw new ApiError(400, "Bad request : Account status is required")
+        }
+
+        const users = await userModel.find(
+            { "role.role_type": "user", "account_status": accountStatus })
+            .select("-password -refreshToken -googleAuthInfo");
+
+        if (!users) {
+            throw new ApiError(404, "No users found");
+        }
+
+        return res
+        .status(200)
+        .json(
+            new ApiResponse(
+                200,
+                users,
+                `All ${accountStatus} users fetched successfully`
+            )
+        )
+    })
 }
 
 const adminController = new AdminController();

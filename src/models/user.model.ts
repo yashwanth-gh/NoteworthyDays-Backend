@@ -17,11 +17,12 @@ export interface UserInput {
     googleId?: string; // New field to store Google User ID
     profilePictureUrl?: string; // New field to store profile picture URL
     googleAuthInfo?: GoogleAuthInfo; // New field to store Google OAuth info
-    is_email_verified: boolean;
     role: {
         role_type: "admin" | "user";
         is_role_verified: boolean;
     };
+    is_email_verified: boolean;
+    account_status: "active" | "pending" | "suspended" | "blocked";
 }
 
 export interface UserDocument extends UserInput, Document, Methods {
@@ -82,6 +83,12 @@ const userSchema = new mongoose.Schema<UserDocument>(
             type: Boolean,
             default: false,
             required: true
+        },
+        account_status:{
+            type: String,
+            enum: ["active", "pending", "suspended", "blocked"],
+            default: "pending",
+            required:true
         }
     },
     {
