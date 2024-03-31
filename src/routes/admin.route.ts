@@ -11,21 +11,12 @@ const adminMiddlewares = [verifyJWT, verifyAdmin, isAccountActive];
 //~ -------- ALL REQUEST HERE SHOULD BE USE 'verifyJWT' AND 'verifyAdmin' MIDDLEWARE --------
 
 //~ see and approve new admin requests
-adminRouter
-    .route("/view-pending-admin-requests")
-    .get(adminMiddlewares, adminController.viewAllPendingAdminRequests)
-adminRouter
-    .route("/approve-admin-request")
-    .patch(adminMiddlewares, adminController.approvePendingAdminRequest)
-
+adminRouter.route("/view-pending-admin-requests").get(adminMiddlewares, adminController.viewAllPendingAdminRequests)
+adminRouter.route("/approve-admin-request").patch(adminMiddlewares, adminController.approvePendingAdminRequest)
 //~ view all users irrespective of their account status
-adminRouter
-    .route("/view-users")
-    .get(adminMiddlewares, adminController.viewAllUsers)
-    
+adminRouter.route("/view-users").get(adminMiddlewares, adminController.viewAllUsers)
 //~ view all users according to their account status
-adminRouter
-    .route("/view-users-by-status")
-    .get(adminMiddlewares, adminController.viewAllUsersByAccountStatus)
-
+adminRouter.route("/view-users-by-status").get(adminMiddlewares, adminController.viewAllUsersByAccountStatus)
+//~ change account status of a user
+adminRouter.route("/change-user-account-status").patch(adminMiddlewares, adminController.changeUserAccountStatus)
 export default adminRouter;

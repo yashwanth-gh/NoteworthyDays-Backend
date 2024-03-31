@@ -127,6 +127,37 @@ export class AdminController {
             )
         )
     })
+
+    changeUserAccountStatus = asyncHandler(async (req: Request, res: Response) => {
+
+        const { userId } = req.query;
+        const { accountStatus } = req.body;
+
+        if (!userId || !accountStatus) {
+            throw new ApiError(400, "Bad request : User id and account status are required")
+        }
+
+        // Convert userId to ObjectId type : not necessary
+        const objectIdUserId = new Types.ObjectId(userId as string);
+
+        const user = await userModel.findOneAndUpdate(
+            { _id: objectIdUserId },
+            { $set: { "account_status": accountStatus } },
+            { new: true }
+        ).select("-password -refreshToken -googleAuthInfo");
+
+        if(!user){
+            throw new ApiError(404,"User not found");
+        }
+
+        return res.status(200).json(
+            new ApiResponse(
+                200,
+                user,
+                `User account status changed to ${user.account_status} successfully`
+            )
+        )
+    })
 }
 
 const adminController = new AdminController();
