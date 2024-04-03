@@ -8,6 +8,7 @@ export const conf = {
     googleOauthTokenUri:String(process.env.GOOGLE_OAUTH_TOKEN_URI),
     corsOrigin:String(process.env.CORS_ORIGIN),
     mongoURI: String(process.env.MONGO_URI),
+    nodeEnv:String(process.env.NODE_ENV),
     accessTokenSecret: String(process.env.ACCESS_TOKEN_SECRET),
     refreshTokenSecret: String(process.env.REFRESH_TOKEN_SECRET),
     accessTokenExpiry: String(process.env.ACCESS_TOKEN_EXPIRY),
@@ -16,4 +17,7 @@ export const conf = {
     resetPasswordTokenExpiry: String(process.env.RESET_PASSWORD_TOKEN_EXPIRY),
     nodemailerSenderMailAddress :  String(process.env.NODEMAILER_SENDER_EMAIL_ADDRESS),
     nodemailerSenderMailPasskey :  String(process.env.NODEMAILER_SENDER_EMAIL_PASSKEY),
+    sessionName :  String(process.env.SESS_NAME),
+    sessionSecret :  String(process.env.SESS_SECRET),
+    sessionExpiry :String(process.env.SESS_EXPIRY) ,
 }

@@ -237,6 +237,9 @@ export class AuthenticationControllers {
             throw new ApiError(500, "User not found")
         }
 
+        const sessionUser = { id: user._id, fullName: user.fullName, email: user.email };
+        req.session.user = sessionUser;
+
         const oneHundredDaysInMilliseconds = 100 * 24 * 60 * 60 * 1000; // 30 days in milliseconds
         const options = {
             httpOnly: true,
@@ -304,7 +307,7 @@ export class AuthenticationControllers {
         if (user.role.role_type !== 'admin') {
             throw new ApiError(401, "This Api endpoint is for admin login only, users should use different endpoint")
         }
-        
+
         //also check if user email is verified or not
         if (!user.is_email_verified) {
             throw new ApiError(401, "Admin email is not verified, Please verify admin email by sending OTP");
@@ -489,6 +492,11 @@ export class AuthenticationControllers {
             }
         );
 
+        req.session.destroy((err) => {
+            //delete session data from store, using sessionID in cookie
+            if (err) throw new ApiError(500, "Internal Server Error : Something went wrong");
+        });
+
         // const oneHundredDaysInMilliseconds = 100 * 24 * 60 * 60 * 1000; // 30 days in milliseconds
         const options = {
             httpOnly: true,
@@ -499,6 +507,7 @@ export class AuthenticationControllers {
             .status(200)
             .clearCookie("accessToken", options)
             .clearCookie("refreshToken", options)
+            .clearCookie(conf.sessionName)
             .json(new ApiResponse(200, {}, "User logged out succesfully!"));
 
     })
@@ -668,6 +677,24 @@ export class AuthenticationControllers {
                     200,
                     {},
                     "Password changed successfully"
+                )
+            )
+    })
+
+    checkSessionforAuth = asyncHandler(async (req: Request, res: Response) => {
+        const userSession = req.session.user;
+
+        if (!userSession) {
+            throw new ApiError(401, "Unauthorized : Session expired login again")
+        }
+
+        return res
+            .status(200)
+            .json(
+                new ApiResponse(
+                    200,
+                    {},
+                    "Session is valid"
                 )
             )
     })

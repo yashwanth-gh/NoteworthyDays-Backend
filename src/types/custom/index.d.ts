@@ -1,3 +1,4 @@
+import { SessionOptions } from "express-session";
 import { ObjectId } from "mongoose";
 
 export type User = {
@@ -26,4 +27,16 @@ export interface UserProfileData {
     family_name: string;
     picture: string;
     locale: string;
+}
+
+export interface CustomSessionOptions extends SessionOptions {
+    httpOnly: boolean;
+    secure: boolean;
+    maxAge: number;
+}
+
+export interface SessionUser {
+    id: string;
+    fullName: string;
+    email: string;
 }
