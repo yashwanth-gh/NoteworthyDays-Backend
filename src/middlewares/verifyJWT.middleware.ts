@@ -33,7 +33,7 @@ export const verifyJWT = asyncHandler(async (req:Request, _ , next:NextFunction)
 
     // (2) and (3)
     if (!token) {
-        throw new ApiError(401, "Unauthorized : no cookie found");
+        throw new ApiError(400, "Bad request : no cookie found");
     }
 
     // (4) (5) (6)
@@ -45,7 +45,7 @@ export const verifyJWT = asyncHandler(async (req:Request, _ , next:NextFunction)
         if (error instanceof jwt.TokenExpiredError) {
             throw new ApiError(401, "Unauthorized : Access token expired");
         }else if(error instanceof jwt.JsonWebTokenError){
-            throw new ApiError(401, "Unauthorized : Access token is INVALID");
+            throw new ApiError(400, "Bad request : Access token is INVALID");
         } else {
             // Handle other JWT errors if necessary
             throw new ApiError(400, "Bad request : Something is wrong with token received")

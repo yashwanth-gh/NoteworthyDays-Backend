@@ -5,6 +5,7 @@ import { asyncHandler } from "../utils/asyncHandler.js";
 import { Request, Response } from "express";
 
 import authenticationControllers from "./auth.controller.js";
+import { conf } from "../constants.js";
 
 export class UserControllers {
 
@@ -26,12 +27,10 @@ export class UserControllers {
 
         const { accessToken: newAccessToken, refreshToken: newRefreshToken } = await authenticationControllers.generateAccessAndRefreshToken(user._id);
 
-        const oneHundredDaysInMilliseconds = 100 * 24 * 60 * 60 * 1000; // 30 days in milliseconds
-
         const options = {
             httpOnly: true,
-            secure: false,
-            maxAge: oneHundredDaysInMilliseconds
+            secure: conf.nodeEnv === 'production',
+            maxAge: parseInt(conf.cookiesExpiry)
         };
 
         return res
@@ -63,11 +62,11 @@ export class UserControllers {
         res.clearCookie("accessToken")
         res.clearCookie("refreshToken")
 
-        const oneHundredDaysInMilliseconds = 100 * 24 * 60 * 60 * 1000; // 30 days in milliseconds
+
         const options = {
             httpOnly: true,
-            secure: false,
-            maxAge: oneHundredDaysInMilliseconds
+            secure: conf.nodeEnv === 'production',
+            maxAge: parseInt(conf.cookiesExpiry)
         };
 
         return res

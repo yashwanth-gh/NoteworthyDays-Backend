@@ -19,5 +19,6 @@ export const conf = {
     nodemailerSenderMailPasskey :  String(process.env.NODEMAILER_SENDER_EMAIL_PASSKEY),
     sessionName :  String(process.env.SESS_NAME),
     sessionSecret :  String(process.env.SESS_SECRET),
-    sessionExpiry :String(process.env.SESS_EXPIRY) ,
+    sessionExpiry :String(process.env.SESS_EXPIRY),
+    cookiesExpiry :String(process.env.COOKIE_EXPIRY)
 }

@@ -86,11 +86,11 @@ export class AuthenticationControllers {
         const { accessToken, refreshToken } = await this.generateAccessAndRefreshToken(user._id);
 
 
-        const oneHundredDaysInMilliseconds = 100 * 24 * 60 * 60 * 1000; // 30 days in milliseconds
+
         const options = {
             httpOnly: true,
-            secure: false,
-            maxAge: oneHundredDaysInMilliseconds
+            secure: conf.nodeEnv === 'production',
+            maxAge: parseInt(conf.cookiesExpiry)
         };
 
         const origin = req.headers.origin || conf.corsOrigin;
@@ -240,11 +240,10 @@ export class AuthenticationControllers {
         const sessionUser = { id: user._id, fullName: user.fullName, email: user.email };
         req.session.user = sessionUser;
 
-        const oneHundredDaysInMilliseconds = 100 * 24 * 60 * 60 * 1000; // 30 days in milliseconds
         const options = {
             httpOnly: true,
-            secure: false,
-            maxAge: oneHundredDaysInMilliseconds
+            secure: conf.nodeEnv === 'production',
+            maxAge: parseInt(conf.cookiesExpiry)
         };
 
         return res
@@ -338,11 +337,10 @@ export class AuthenticationControllers {
             throw new ApiError(500, "Admin not found")
         }
 
-        const oneHundredDaysInMilliseconds = 100 * 24 * 60 * 60 * 1000; // 30 days in milliseconds
         const options = {
             httpOnly: true,
-            secure: false,
-            maxAge: oneHundredDaysInMilliseconds
+            secure: conf.nodeEnv === 'production',
+            maxAge: parseInt(conf.cookiesExpiry)
         };
 
         return res
@@ -497,10 +495,10 @@ export class AuthenticationControllers {
             if (err) throw new ApiError(500, "Internal Server Error : Something went wrong");
         });
 
-        // const oneHundredDaysInMilliseconds = 100 * 24 * 60 * 60 * 1000; // 30 days in milliseconds
+       
         const options = {
             httpOnly: true,
-            secure: false,
+            secure: conf.nodeEnv === 'production',
         };
 
         return res
@@ -551,11 +549,10 @@ export class AuthenticationControllers {
 
         const { accessToken: newAccessToken, refreshToken: newRefreshToken } = await this.generateAccessAndRefreshToken(user._id);
 
-        const oneHundredDaysInMilliseconds = 100 * 24 * 60 * 60 * 1000; // 30 days in milliseconds
         const options = {
             httpOnly: true,
-            secure: false,
-            maxAge: oneHundredDaysInMilliseconds
+            secure: conf.nodeEnv === 'production',
+            maxAge: parseInt(conf.cookiesExpiry)
         };
 
         return res
@@ -575,10 +572,13 @@ export class AuthenticationControllers {
     getCurrentUser = asyncHandler(async (req: Request, res: Response) => {
         // const userData = await User.findById(req.user?._id).select("-password -refreshToken")
         const userData = req.user;
+        if(!userData){
+            throw new ApiError(500, "Server Error");
+        }
         return res
             .status(200)
             .json(
-                new ApiResponse(200, { userData }, "current user data fetched successfully")
+                new ApiResponse(200, userData, "current user data fetched successfully")
             );
     })
 
