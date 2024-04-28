@@ -224,7 +224,7 @@ export class AuthenticationControllers {
         const isPasswordCorrect = await user.isPasswordCorrect(password);
 
         if (!isPasswordCorrect) {
-            throw new ApiError(400, "Invalid password or password does not exist try othe way of signin");
+            throw new ApiError(403, "Invalid password or password does not exist try othe way of signin");
         }
 
         const { accessToken, refreshToken } = await this.generateAccessAndRefreshToken(user._id);
@@ -324,7 +324,7 @@ export class AuthenticationControllers {
         const isPasswordCorrect = await user.isPasswordCorrect(password);
 
         if (!isPasswordCorrect) {
-            throw new ApiError(400, "Invalid password or password does not exist try othe way of signin");
+            throw new ApiError(403, "Invalid password or password does not exist try othe way of signin");
         }
 
         const { accessToken, refreshToken } = await this.generateAccessAndRefreshToken(user._id);
@@ -495,7 +495,7 @@ export class AuthenticationControllers {
             if (err) throw new ApiError(500, "Internal Server Error : Something went wrong");
         });
 
-       
+
         const options = {
             httpOnly: true,
             secure: conf.nodeEnv === 'production',
@@ -572,7 +572,7 @@ export class AuthenticationControllers {
     getCurrentUser = asyncHandler(async (req: Request, res: Response) => {
         // const userData = await User.findById(req.user?._id).select("-password -refreshToken")
         const userData = req.user;
-        if(!userData){
+        if (!userData) {
             throw new ApiError(500, "Server Error");
         }
         return res

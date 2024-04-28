@@ -4,6 +4,7 @@ import cookieParser from "cookie-parser";
 import path from 'path';
 import session from 'express-session';
 import MongoStore from 'connect-mongo';
+import morgan from 'morgan';
 
 const app: Express = express();
 
@@ -17,6 +18,8 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 app.use(express.static(path.resolve("public")));
+
+app.use(morgan("common"));
 
 app.use(cookieParser());
 
