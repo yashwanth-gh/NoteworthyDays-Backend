@@ -14,7 +14,7 @@ export const isAccountActive = asyncHandler(async (req: Request, _, next: NextFu
 
     if (!user || user.account_status !== 'active') {
         // If user is not defined or is not an admin, return 403 Forbidden
-        throw new ApiError(401, "This account's status is not active");
+        throw new ApiError(403, "This account's status is not active");
     }
 
     next();

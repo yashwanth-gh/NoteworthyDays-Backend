@@ -11,6 +11,7 @@ const adminMiddlewares = [verifyJWT, verifyAdmin, isAccountActive];
 //~ -------- ALL REQUEST HERE SHOULD BE USE 'verifyJWT' AND 'verifyAdmin' MIDDLEWARE --------
 
 //~ see and approve new admin requests
+adminRouter.route("/getadmin-details").get(adminMiddlewares, adminController.getCurrentAdmin)
 adminRouter.route("/view-pending-admin-requests").get(adminMiddlewares, adminController.viewAllPendingAdminRequests)
 adminRouter.route("/approve-admin-request").patch(adminMiddlewares, adminController.approvePendingAdminRequest)
 //~ view all users irrespective of their account status

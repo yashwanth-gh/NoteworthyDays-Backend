@@ -62,7 +62,7 @@ export class AdminController {
                 "role.role_type": "admin",
                 "role.is_role_verified": false
             },
-            { $set: { "role.is_role_verified": true,"account_status":"active" } },
+            { $set: { "role.is_role_verified": true, "account_status": "active" } },
             { new: true }
         ).select("-password") as UserDocument
 
@@ -118,14 +118,14 @@ export class AdminController {
         }
 
         return res
-        .status(200)
-        .json(
-            new ApiResponse(
-                200,
-                users,
-                `All ${accountStatus} users fetched successfully`
+            .status(200)
+            .json(
+                new ApiResponse(
+                    200,
+                    users,
+                    `All ${accountStatus} users fetched successfully`
+                )
             )
-        )
     })
 
     changeUserAccountStatus = asyncHandler(async (req: Request, res: Response) => {
@@ -146,8 +146,8 @@ export class AdminController {
             { new: true }
         ).select("-password -refreshToken -googleAuthInfo");
 
-        if(!user){
-            throw new ApiError(404,"User not found");
+        if (!user) {
+            throw new ApiError(404, "User not found");
         }
 
         return res.status(200).json(
@@ -157,6 +157,19 @@ export class AdminController {
                 `User account status changed to ${user.account_status} successfully`
             )
         )
+    })
+
+    getCurrentAdmin = asyncHandler(async (req: Request, res: Response) => {
+        const user = req.user as UserDocument;
+        return res
+            .status(200)
+            .json(
+                new ApiResponse(
+                    200,
+                    user,
+                    "Current admin fetched successfully"
+                )
+            )
     })
 }
 
